@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"gotest/models"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-type UserController struct{}
+type UserController struct {
+	UserModel *models.UserModel
+}
 
 func (u *UserController) Hello(c *fiber.Ctx) error {
 	return c.SendString("hello world!")
@@ -17,27 +21,25 @@ func (u *UserController) Error(c *fiber.Ctx) error {
 func (u *UserController) Params(c *fiber.Ctx) error {
 	return c.JSON(c.Params("name"))
 }
+
 func (u *UserController) Header(c *fiber.Ctx) error {
 	return c.JSON(c.GetReqHeaders())
 }
 
 func (u *UserController) Post(c *fiber.Ctx) error {
-	var user, nick models.User
+	var user models.User
 	if err := c.BodyParser(&user); err != nil {
 		return fiber.NewError(500, "check name")
 	}
-	if err := c.BodyParser(&nick); err != nil {
-		return fiber.NerError(500, "check nick")
-	}
-	return models.Post(user)
+	return u.UserModel.Insert(&user)
 }
 
-func (u *UserContorller) Insert(c *fiber.Ctx) error {
+func (u *UserController) Insert(c *fiber.Ctx) error {
 	user := new(models.User)
 	if err := c.BodyParser(user); err != nil {
 		return err
 	}
-	return models.Insert(user)
+	return u.UserModel.Insert(user)
 }
 
 func (u *UserController) Select(c *fiber.Ctx) error {
@@ -45,7 +47,11 @@ func (u *UserController) Select(c *fiber.Ctx) error {
 	if err := c.BodyParser(user); err != nil {
 		return err
 	}
-	return models.Select(users)
+	users, err := u.UserModel.Select(user.Name)
+	if err != nil {
+		return err
+	}
+	return c.JSON(users)
 }
 
 func (u *UserController) Delete(c *fiber.Ctx) error {
@@ -53,7 +59,11 @@ func (u *UserController) Delete(c *fiber.Ctx) error {
 	if err := c.BodyParser(user); err != nil {
 		return err
 	}
-	return models.Delete(users.No)
+	err := u.UserModel.Delete(user.No)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *UserController) Update(c *fiber.Ctx) error {
@@ -61,5 +71,5 @@ func (u *UserController) Update(c *fiber.Ctx) error {
 	if err := c.BodyParser(user); err != nil {
 		return err
 	}
-	return models.Update(user.Nick, user.No)
+	return u.UserModel.Update(user)
 }

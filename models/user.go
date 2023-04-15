@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -17,45 +18,74 @@ type UserModel struct {
 }
 
 func NewUserModel(db *sql.DB) *UserModel {
-	return &UserModel{db: db}
+	return &UserModel{
+		db: db,
+	}
 }
 
-func (um *UserModel) insert(user *User) error {
+func (um *UserModel) Insert(user *User) error {
 	insertQuery := "insert into users (name, nick) values(?,?)"
-	_, err := um.dbExec(insertQuery, user.Name, user.Nick)
+	_, err := um.db.Exec(insertQuery, user.Name, user.Nick)
 	return err
 }
 
-func (um *UnserModel) Select(name string) ([]User, error) {
-	selectQuery := "select No,Nick from users where name = ?"
+// 배열에 싸는 방법
+func (um *UserModel) Select(name string) ([]User, error) {
+	selectQuery := "select no,nick,name from golang.users where name = ?"
 	rows, err := um.db.Query(selectQuery, name)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
 	users := make([]User, 0)
+
 	for rows.Next() {
 		var user User
-		err := fows.Scan(&user.No, &user.Nick, &user.Name)
+		err := rows.Scan(&user.No, &user.Nick, &user.Name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		users = append(users, user)
 	}
 	if err := rows.Err(); err != nil {
-		return err
+		return nil, err
 	}
 	return users, nil
 }
 
+//
+// 배열 없이하는 방법
+// func (um *UserModel) Select(name string) (User, error) {
+// 	selectQuery := "select no,nick,name from golang.users where name = ?"
+// 	rows, err := um.db.Query(selectQuery, name)
+// 	if err != nil {
+// 		return User{}, err
+// 	}
+// 	defer rows.Close()
+
+// 	var users User
+
+//		for rows.Next() {
+//			err := rows.Scan(&users.No, &users.Nick, &users.Name)
+//			if err != nil {
+//				return User{}, err
+//			}
+//		}
+//		if err := rows.Err(); err != nil {
+//			return User{}, err
+//		}
+//		return users, nil
+//	}
+
 func (um *UserModel) Delete(no int) error {
-	deleteQuery := "delete golang.users where no = ?"
+	deleteQuery := "delete from users where no = ?"
 	_, err := um.db.Exec(deleteQuery, no)
 	return err
 }
 
 func (um *UserModel) Update(user *User) error {
-	updateQuery := "update golang.users set nick =?  where no = ?"
-	_, err = um.db.Exec(updateQuery, user.Nick, user.No)
+	updateQuery := "update users set nick =?  where name = ?"
+	_, err := um.db.Exec(updateQuery, user.Nick, user.Name)
 	return err
 }

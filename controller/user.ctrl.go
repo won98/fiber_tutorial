@@ -39,9 +39,23 @@ func (u *UserController) Post(c *fiber.Ctx) error {
 func (u *UserController) Insert(c *fiber.Ctx) error {
 	user := new(models.User)
 	if err := c.BodyParser(user); err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to parse JSON",
+		})
 		return err
 	}
-	return u.UserModel.Insert(user)
+
+	err := u.UserModel.Insert(user)
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to insert",
+		})
+		return err
+	}
+
+	return c.JSON(fiber.Map{
+		"result": 1,
+	})
 }
 
 func (u *UserController) Select(c *fiber.Ctx) error {

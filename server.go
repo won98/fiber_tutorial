@@ -37,6 +37,7 @@ func main() {
 	app.Post("/user/select", userController.Select)
 	app.Post("/user/delete", userController.Delete)
 	app.Post("/user/update", userController.Update)
+	app.Post("/user/login", userController.Login)
 
 	// Start server
 	err = app.Listen(":3000")

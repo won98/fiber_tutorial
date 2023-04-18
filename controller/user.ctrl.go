@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"gotest/models"
+	"gotest/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -44,11 +46,19 @@ func (u *UserController) Insert(c *fiber.Ctx) error {
 
 func (u *UserController) Select(c *fiber.Ctx) error {
 	user := new(models.User)
-	if err := c.BodyParser(user); err != nil {
+	err := c.BodyParser(&user)
+	fmt.Println(user)
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
 		return err
 	}
 	users, err := u.UserModel.Select(user.Name)
 	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
 		return err
 	}
 	return c.JSON(users)
@@ -56,20 +66,84 @@ func (u *UserController) Select(c *fiber.Ctx) error {
 
 func (u *UserController) Delete(c *fiber.Ctx) error {
 	user := new(models.User)
-	if err := c.BodyParser(user); err != nil {
-		return err
+	err2 := c.BodyParser(user)
+	fmt.Println(user)
+	if err2 != nil {
+
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
+		return nil
+	}
+	if user.No <= 0 {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user no",
+		})
+		return nil
 	}
 	err := u.UserModel.Delete(user.No)
 	if err != nil {
-		return err
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
+		return nil
 	}
-	return nil
+	return c.JSON(map[string]interface{}{
+		"result": 1,
+	})
 }
 
 func (u *UserController) Update(c *fiber.Ctx) error {
-	user := new(models.User)
-	if err := c.BodyParser(user); err != nil {
+	// 분해해서 아이디값
+	id, err := utils.VarifiyToken(c)
+	fmt.Println(id)
+	if err != nil {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 		return err
 	}
-	return u.UserModel.Update(user)
+
+	user := new(models.User)
+	if err := c.BodyParser(user); err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
+		return err
+	}
+
+	// 분해해서 얻은 아이디로 업데이트
+	user.Id = id
+	if err := u.UserModel.Update(user); err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	return c.JSON(map[string]interface{}{
+		"result": 1,
+	})
+}
+
+func (u *UserController) Login(c *fiber.Ctx) error {
+	user := new(models.User)
+	err := c.BodyParser(&user)
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
+		return err
+	}
+	token, refreshtoken, err := u.UserModel.Login(user.Id, user.Pass)
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse json",
+		})
+		return err
+	}
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
+		"token":        token,
+		"refreshtoken": refreshtoken,
+	})
 }

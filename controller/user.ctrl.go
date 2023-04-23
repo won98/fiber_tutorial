@@ -33,7 +33,9 @@ func (u *UserController) Post(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return fiber.NewError(500, "check name")
 	}
-	return u.UserModel.Insert(&user)
+	return c.Status(fiber.StatusOK).JSON(map[string]interface{}{
+		"result": "success",
+	})
 }
 
 func (u *UserController) Insert(c *fiber.Ctx) error {
@@ -44,8 +46,12 @@ func (u *UserController) Insert(c *fiber.Ctx) error {
 		})
 		return err
 	}
+	userid := user.Id
+	name := user.Name
+	nick := user.Nick
+	pass := user.Password
 
-	err := u.UserModel.Insert(user)
+	err := u.UserModel.Insert(user, userid, name, nick, pass)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "failed to insert",
@@ -81,7 +87,7 @@ func (u *UserController) Select(c *fiber.Ctx) error {
 func (u *UserController) Delete(c *fiber.Ctx) error {
 	user := new(models.User)
 	err2 := c.BodyParser(user)
-	fmt.Println(user)
+	fmt.Println(err2)
 	if err2 != nil {
 
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -96,6 +102,7 @@ func (u *UserController) Delete(c *fiber.Ctx) error {
 		return nil
 	}
 	err := u.UserModel.Delete(user.No)
+	fmt.Println(err)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "cannot parse json",
@@ -149,7 +156,7 @@ func (u *UserController) Login(c *fiber.Ctx) error {
 		})
 		return err
 	}
-	token, refreshtoken, err := u.UserModel.Login(user.Id, user.Pass)
+	token, refreshtoken, err := u.UserModel.Login(user.Id, user.Password)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "cannot parse json",

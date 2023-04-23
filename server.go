@@ -1,24 +1,28 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-
 	"gotest/controller"
 	"gotest/models"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func main() {
-	// Connect to MySQL database
-	db, err := sql.Open("mysql", "root:1111@tcp(127.0.0.1:3306)/golang")
+	//row query 사용시
+	//Connect to MySQL database
+	// db, err := sql.Open("mysql", "root:1111@tcp(127.0.0.1:3306)/golang")
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// defer db.Close()
+	db, err := gorm.Open(mysql.Open("root:1111@tcp(127.0.0.1:3306)/golang"), &gorm.Config{})
 	if err != nil {
-		panic(err.Error())
+		panic("Db 연결에 실패하였습니다.")
 	}
-	defer db.Close()
-
 	// Initialize User model and controller
 	userModel := models.NewUserModel(db)
 	userController := &controller.UserController{
